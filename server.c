@@ -1,65 +1,118 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
+struct action {
+    int type;
+    int moves[100];
+    int board[10][10];
+};
 
 int main(int argc, char *argv[]) {
-
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    char buffer[1024] = {0};
-    char *protocol = argv[1];
-    int port = atoi(argv[2]);
-    
-    printf("Porta utilizada: %d \n", port);
-
-    // Criando o socket do servidor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("Erro ao criar o socket");
+    if (argc != 5 || strcmp(argv[3], "-i") != 0) {
+        fprintf(stderr, "Uso: %s <v4|v6> <porta> -i <arquivo_labirinto>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;  // Aceitar conexões de qualquer IP
-    address.sin_port = htons(port);
+    int server_fd;
+    struct sockaddr_in6 addr6;
+    struct sockaddr_in addr4;
+    int porta = atoi(argv[2]);
 
-    // Ligando o socket ao endereço e porta
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("Erro no bind");
+    if (strcmp(argv[1], "v4") == 0) {
+        server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd == -1) {
+            perror("Erro ao criar socket IPv4");
+            exit(EXIT_FAILURE);
+        }
+        
+        memset(&addr4, 0, sizeof(addr4));
+        addr4.sin_family = AF_INET;
+        addr4.sin_port = htons(porta);
+        addr4.sin_addr.s_addr = INADDR_ANY;
+
+        if (bind(server_fd, (struct sockaddr*)&addr4, sizeof(addr4)) < 0) {
+            perror("Erro no bind IPv4");
+            close(server_fd);
+            exit(EXIT_FAILURE);
+        }
+    } else if (strcmp(argv[1], "v6") == 0) {
+        server_fd = socket(AF_INET6, SOCK_STREAM, 0);
+        if (server_fd == -1) {
+            perror("Erro ao criar socket IPv6");
+            exit(EXIT_FAILURE);
+        }
+
+        memset(&addr6, 0, sizeof(addr6));
+        addr6.sin6_family = AF_INET6;
+        addr6.sin6_port = htons(porta);
+        addr6.sin6_addr = in6addr_any;
+
+        if (bind(server_fd, (struct sockaddr*)&addr6, sizeof(addr6)) < 0) {
+            perror("Erro no bind IPv6");
+            close(server_fd);
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        fprintf(stderr, "Protocolo inválido. Use 'v4' para IPv4 ou 'v6' para IPv6.\n");
         exit(EXIT_FAILURE);
     }
 
-    // Colocando o servidor para escutar conexões
     if (listen(server_fd, 3) < 0) {
         perror("Erro ao escutar");
         exit(EXIT_FAILURE);
     }
 
-    printf("Servidor aguardando conexão...\n");
+    printf("Servidor aguardando conexão na porta %d...\n", porta);
 
-    socklen_t addrlen = sizeof(address);  // Variável para armazenar o tamanho da estrutura sockaddr_in
-    // Aceitar a primeira conexão
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen)) < 0) {
+    int new_socket;
+    struct sockaddr_storage their_addr;
+    socklen_t addr_size = sizeof(their_addr);
+
+    new_socket = accept(server_fd, (struct sockaddr *)&their_addr, &addr_size);
+    if (new_socket == -1) {
         perror("Erro ao aceitar conexão");
         exit(EXIT_FAILURE);
     }
 
     printf("Conexão estabelecida com o cliente\n");
 
+    struct action msg;
+    bool game_started = false;
+
     while (1) {
-        // Ler dados enviados pelo cliente
-        int valread = read(new_socket, buffer, 1024);
-        if (valread == 0) {
-            // Se o cliente fechar a conexão
-            printf("Cliente desconectado\n");
+        memset(&msg, 0, sizeof(msg));
+
+        int len = recv(new_socket, &msg, sizeof(msg), 0);
+        if (len <= 0) {
+            perror("Erro ao receber dados do cliente");
             break;
         }
-        printf("Mensagem recebida do cliente: %s\n", buffer);
 
-        // Enviar resposta ao cliente
-        send(new_socket, "Message Received", strlen("Message Received"), 0);
+        printf("Comando recebido do cliente: Tipo de ação = %d\n", msg.type);
+
+        if ((msg.type == 0) && (game_started == false)){
+            printf("Starting new game\n");
+            printf("<Envia para o cliente os movimentos possiveis>\n");
+            game_started = true;
+        } else if ((msg.type == 0) && (game_started == true)){
+            printf("Jogo ja foi inicializado\n");
+        }
+
+        if (msg.type == 7) {  // Se o comando for 'exit'
+            printf("<reseta o estado do jogo>\n");
+            printf("client disconnected.\n");
+            break;
+        }
+
+        // Envia a resposta ao cliente
+        send(new_socket, &msg, sizeof(msg), 0);
     }
 
     close(new_socket);

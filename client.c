@@ -1,67 +1,88 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
+struct action {
+    int type;
+    int moves[100];
+    int board[10][10];
+};
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        fprintf(stderr, "Chamada correta: %s <hostname> <porta>\n", argv[0]);
+        fprintf(stderr, "Uso: %s <endereco IP> <porta>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    int sock = 0;
-    struct sockaddr_in serv_addr;
-    char buffer[1024] = {0};
-    char message[1024];
-    int port = atoi(argv[2]);
-    
-    printf("Porta utilizada: %d \n", port);
+    int sockfd;
+    struct addrinfo hints, *res;
+    struct action msg;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
 
-    // Criando o socket
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    int status = getaddrinfo(argv[1], argv[2], &hints, &res);
+    if (status != 0) {
+        fprintf(stderr, "Erro no getaddrinfo: %s\n", gai_strerror(status));
+        exit(EXIT_FAILURE);
+    }
+
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd == -1) {
         perror("Erro ao criar socket");
-        return -1;
+        freeaddrinfo(res);
+        exit(EXIT_FAILURE);
     }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
-
-    // Converte o endereço IP do servidor do formato texto para binário
-    if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
-        perror("Endereço inválido ou não suportado");
-        return -1;
+    if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
+        perror("Erro ao conectar ao servidor");
+        freeaddrinfo(res);
+        close(sockfd);
+        exit(EXIT_FAILURE);
     }
 
-    // Conectando ao servidor
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        perror("Erro ao conectar");
-        return -1;
-    }
-
-    printf("Conectado ao servidor! Você pode começar a conversar.\n");
-
+    freeaddrinfo(res);
+    printf("Conectado ao servidor\n");
+    
+    bool game_started = false;
+    
     while (1) {
-        // Solicita uma mensagem do usuário
-        printf("Digite a mensagem para o servidor: ");
-        fgets(message, sizeof(message), stdin); // Lê uma linha de texto
+        int command;
+        printf("Digite um comando:\n(iniciar=0, movimentar=1, mapa=2, dica=3, recomecar=6, sair=7): ");
+        scanf("%d", &command);
 
-        // Envia a mensagem ao servidor
-        send(sock, message, strlen(message), 0);
-        printf("Mensagem enviada ao servidor\n");
+        memset(&msg, 0, sizeof(msg));
+        msg.type = command;
 
-        // Se o usuário digitar 'exit', termina o programa
-        if (strncmp(message, "exit", 4) == 0) {
+        // Envia a estrutura 'action' para o servidor
+        send(sockfd, &msg, sizeof(msg), 0);
+
+        if ((msg.type == 0) && (game_started == false)){
+            printf("Imprime possible moves, recebidos do servidor\n");
+            //flag que inicia o jogo
+            game_started = true;
+        } else if ((msg.type == 0) && (game_started == true)){
+            printf("Jogo ja foi inicializado\n");
+        }
+
+        if (msg.type == 7) {  // Se o comando for 'exit'
+            printf("Encerrando a conexão.\n");  
             break;
         }
 
         // Recebe a resposta do servidor
-        read(sock, buffer, 1024);
-        printf("Mensagem recebida do servidor: %s\n", buffer);
+        memset(&msg, 0, sizeof(msg));
+        int len = recv(sockfd, &msg, sizeof(msg), 0);
+        if (len > 0) {
+            printf("Resposta do servidor: Tipo de ação recebida = %d\n", msg.type);
+        }
     }
 
-    // Fechando o socket
-    close(sock);
+    close(sockfd);
     return 0;
 }
