@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+
 struct action {
     int type;
     int moves[100];
@@ -89,22 +91,45 @@ int main(int argc, char *argv[]) {
     while (1) {
         memset(&msg, 0, sizeof(msg));
 
-        int len = recv(new_socket, &msg, sizeof(msg), 0);
-        if (len <= 0) {
+        int msg_from_client = recv(new_socket, &msg, sizeof(msg), 0);
+        
+        if (msg_from_client <= 0) {
             perror("Erro ao receber dados do cliente");
             break;
         }
 
         printf("Comando recebido do cliente: Tipo de ação = %d\n", msg.type);
 
+        if ((msg.type != 0) && (game_started == false)){
+            perror("error: start the game first ");
+            continue;
+        }
+        
+        //Inicia o jogo
         if ((msg.type == 0) && (game_started == false)){
             printf("Starting new game\n");
             printf("<Envia para o cliente os movimentos possiveis>\n");
             game_started = true;
-        } else if ((msg.type == 0) && (game_started == true)){
-            printf("Jogo ja foi inicializado\n");
         }
 
+        // Movimentação
+        if(msg.type == 1){
+            for(unsigned i=0;i<4;i++){
+                msg.moves[0] = 1;  // Possível movimento: "up"
+                msg.moves[1] = 3;  // Possível movimento: "right"
+                msg.moves[2] = 0;  // Marca o fim dos movimentos válidos
+            }
+        }
+
+
+        // Mapa do tabuleiro
+        if(msg.type == 2){
+            for(unsigned i=0;i< 4;i++){
+                // msg.board = matrix;
+            }
+        }
+
+        // Sair do Jogo
         if (msg.type == 7) {  // Se o comando for 'exit'
             printf("<reseta o estado do jogo>\n");
             printf("client disconnected.\n");

@@ -6,12 +6,57 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <ctype.h>
+#include <string.h>
 
 struct action {
     int type;
     int moves[100];
     int board[10][10];
 };
+
+void print_possible_moves(int *moves) {
+    printf("Possible moves: ");
+    for (int i = 0; i < 100 && moves[i] != 0; i++) { 
+        if(moves[i] == 1){
+            printf("up");
+            if(moves[i+1] != 0){
+                printf(", ");
+            } else {
+                printf(".");
+            }
+        }
+
+        if(moves[i] == 2 ){
+            printf("right");
+            if(moves[i+1] != 0){
+                printf(", ");
+            } else {
+                printf(".");
+            }
+        }
+
+        if(moves[i] == 3 ){
+            printf("down");
+            if(moves[i+1] != 0){
+                printf(", ");
+            } else {
+                printf(".");
+            }
+        }
+
+        if(moves[i] == 4 ){
+            printf("left");
+            if(moves[i+1] != 0){
+                printf(", ");
+            } else {
+                printf(".");
+            }
+        }
+    }
+    printf("\n");
+}
+
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -58,29 +103,56 @@ int main(int argc, char *argv[]) {
 
         memset(&msg, 0, sizeof(msg));
         msg.type = command;
-
         // Envia a estrutura 'action' para o servidor
         send(sockfd, &msg, sizeof(msg), 0);
 
-        if ((msg.type == 0) && (game_started == false)){
-            printf("Imprime possible moves, recebidos do servidor\n");
-            //flag que inicia o jogo
-            game_started = true;
-        } else if ((msg.type == 0) && (game_started == true)){
-            printf("Jogo ja foi inicializado\n");
+        // TRATAR CASO NAO SEJA ESCRITO UM NUMERO E SIM UMA LETRA, qualquer letra buga o programa
+
+        if ((msg.type != 0) && (game_started == false)){
+            perror("error: start the game first");
+            continue;
         }
 
         if (msg.type == 7) {  // Se o comando for 'exit'
-            printf("Encerrando a conexão.\n");  
+            printf("Encerrando a conexão.\n");
+            game_started = false;  
             break;
         }
 
-        // Recebe a resposta do servidor
-        memset(&msg, 0, sizeof(msg));
-        int len = recv(sockfd, &msg, sizeof(msg), 0);
-        if (len > 0) {
-            printf("Resposta do servidor: Tipo de ação recebida = %d\n", msg.type);
+        int msg_received = recv(sockfd, &msg, sizeof(msg), 0);
+
+        if (msg_received <= 0) {
+            perror("Sem resposta do servidor");
+            continue;
         }
+
+        if ((msg.type == 0) && (game_started == false)){
+            print_possible_moves(msg.moves);
+            //flag que inicia o jogo
+            game_started = true;
+        } else if ((msg.type == 0) && (game_started == true)){
+            printf("Game is already running\n");
+        }
+
+        // Movimentação
+        if (msg.type == 1) {
+            print_possible_moves(msg.moves);
+        }
+
+        // Mapa do tabuleiro
+        if(msg.type == 2){
+            for(unsigned i=0;i< 10;i++){
+                // print_matrix(msg.board);
+            }
+        }
+
+        if(msg.type == 3){
+            for(unsigned i=0;i< 10;i++){
+                // print_matrix(msg.board);
+            }
+        }
+
+
     }
 
     close(sockfd);

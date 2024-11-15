@@ -429,7 +429,7 @@ void exibirMatrizChar(char** matriz, int linhas, int colunas) {
     int main()
     {
 
-        const char *Labirinto = "input/in.txt"; 
+        const char *Labirinto = "input/maze.txt"; 
         int linhas, colunas;
     
      
