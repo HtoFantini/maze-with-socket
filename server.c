@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "utils.c"
 
 
 
@@ -86,7 +87,9 @@ int main(int argc, char *argv[]) {
     printf("Conexão estabelecida com o cliente\n");
 
     struct action msg;
+    struct action msg_received;
     bool game_started = false;
+    bool game_ended = false;
 
     while (1) {
         memset(&msg, 0, sizeof(msg));
@@ -120,7 +123,6 @@ int main(int argc, char *argv[]) {
                 msg.moves[2] = 0;  // Marca o fim dos movimentos válidos
             }
         }
-
 
         // Mapa do tabuleiro
         if(msg.type == 2){

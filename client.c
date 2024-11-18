@@ -8,55 +8,13 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <string.h>
+#include "utils.c"
 
 struct action {
     int type;
     int moves[100];
     int board[10][10];
 };
-
-void print_possible_moves(int *moves) {
-    printf("Possible moves: ");
-    for (int i = 0; i < 100 && moves[i] != 0; i++) { 
-        if(moves[i] == 1){
-            printf("up");
-            if(moves[i+1] != 0){
-                printf(", ");
-            } else {
-                printf(".");
-            }
-        }
-
-        if(moves[i] == 2 ){
-            printf("right");
-            if(moves[i+1] != 0){
-                printf(", ");
-            } else {
-                printf(".");
-            }
-        }
-
-        if(moves[i] == 3 ){
-            printf("down");
-            if(moves[i+1] != 0){
-                printf(", ");
-            } else {
-                printf(".");
-            }
-        }
-
-        if(moves[i] == 4 ){
-            printf("left");
-            if(moves[i+1] != 0){
-                printf(", ");
-            } else {
-                printf(".");
-            }
-        }
-    }
-    printf("\n");
-}
-
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -66,7 +24,6 @@ int main(int argc, char *argv[]) {
 
     int sockfd;
     struct addrinfo hints, *res;
-    struct action msg;
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -94,10 +51,15 @@ int main(int argc, char *argv[]) {
     freeaddrinfo(res);
     printf("Conectado ao servidor\n");
     
+    struct action msg;
+    struct action msg_received;
     bool game_started = false;
+    bool game_ended = false;
     
     while (1) {
         int command;
+        char move;
+        
         printf("Digite um comando:\n(iniciar=0, movimentar=1, mapa=2, dica=3, recomecar=6, sair=7): ");
         scanf("%d", &command);
 
@@ -119,13 +81,6 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        int msg_received = recv(sockfd, &msg, sizeof(msg), 0);
-
-        if (msg_received <= 0) {
-            perror("Sem resposta do servidor");
-            continue;
-        }
-
         if ((msg.type == 0) && (game_started == false)){
             print_possible_moves(msg.moves);
             //flag que inicia o jogo
@@ -136,7 +91,16 @@ int main(int argc, char *argv[]) {
 
         // Movimentação
         if (msg.type == 1) {
+            int msg_received = recv(sockfd, &msg, sizeof(msg), 0);
             print_possible_moves(msg.moves);
+            if(msg.type == 4){
+                printf("\nDigite o movimento (1=Cima, 2=Direita, 3=Baixo, 4=Esquerda): ");
+                 if (scanf("%s", command) != 1) {
+                    fprintf(stderr, "Entrada inválida. Saindo...\n");
+                    send(sockfd, &msg, sizeof(msg), 0);
+                    break;
+                }
+            }
         }
 
         // Mapa do tabuleiro

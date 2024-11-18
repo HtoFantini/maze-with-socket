@@ -184,10 +184,12 @@ int* can_move(int **matrix, int rows, int cols){
 
 int* possible_moves(int **matrix, int rows, int cols){
     int *poss_moves = can_move(matrix,rows,cols);
+    printf("can_move result: %d %d %d %d\n", poss_moves[0], poss_moves[1], poss_moves[2], poss_moves[3]);
     unsigned i,j = 0;
 
     while(i < 4) {
         if (poss_moves[i] == 0){
+            printf("entrou aqui");
             j = i+1;
             while(j < 4 && poss_moves[j] == 0) {
                 j++;
@@ -298,6 +300,21 @@ int check_move(const char *command, int *possib_moves) {
 
     printf("error: you cannot go this way\n");
     return 0;  
+}
+
+void adjust_array(int *vec) {
+    int aux[4] = {0};
+    int index = 0;
+
+    for (int i = 0; i < 4; i++) {
+        if (vec[i] != 0) {
+            aux[index++] = vec[i];
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        vec[i] = aux[i];
+    }
 }
 
 ////////////////////////// MANIPULACAO DE MATRIZES /////////////////////////////
@@ -482,6 +499,28 @@ void free_char_matrix(char** matrix, int rows) {
     free(matrix);
 }
 
+void copy_to_board(int target[10][10], int **matrix, int rows, int cols) {
+
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            target[i][j] = 0;
+        }
+    }
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            target[i][j] = matrix[i][j];
+        }
+    }
+}
+
+void assign_board_to_dynamic(int static_board[10][10], int **dynamic_board, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            dynamic_board[i][j] = static_board[i][j]; // Atribui os valores
+        }
+    }
+}
 /////////////////////////////// COMANDOS DO JOGO ////////////////////////////
 
 void start_game(int **matrix, int rows, int cols){
@@ -505,7 +544,7 @@ int game_ended (int **matrix, int rows, int cols, int **root_matrix){
 }
 
 
-int main() {
+int main2() {
     const char *file = "input/maze.txt";
     int rows, cols;
 
