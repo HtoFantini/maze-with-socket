@@ -21,16 +21,6 @@ void int_to_command(int move, char *command) {
     }
 }
 
-void print_board(int board[10][10], int rows, int cols) {
-    printf("board:\n");
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            printf("%d ", board[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 struct action {
     int type;
     int moves[100];
@@ -191,7 +181,7 @@ int main(int argc, char *argv[]) {
             if (game_ended(maze, rows, cols, root_maze)){
                 msg.type = 5;
                 game_end = true;
-                copy_to_board(msg.board,maze,rows,cols);
+                copy_to_board(msg.board,root_maze,rows,cols);
                 print_board(msg.board,rows,cols);
             } else {
                 msg.type=4;
@@ -202,9 +192,12 @@ int main(int argc, char *argv[]) {
             printf("Player moved. Updated possible moves sent to client.\n");
 
             free(possib_moves);
-        } else if (msg.type == 2) { // Cliente deseja encerrar a conexão
-            printf("Client requested to exit.\n");
-            break;
+        } else if (msg.type == 2) {
+            msg.type = 4;
+            printf("Client requested maze map");
+            copy_to_board(msg.board,maze,rows,cols);
+            print_board(msg.board,rows,cols);
+            send(new_socket, &msg, sizeof(msg), 0);
         } else {
             printf("Unknown message type received.\n");
         }

@@ -189,7 +189,6 @@ int* possible_moves(int **matrix, int rows, int cols){
 
     while(i < 4) {
         if (poss_moves[i] == 0){
-            printf("entrou aqui");
             j = i+1;
             while(j < 4 && poss_moves[j] == 0) {
                 j++;
@@ -519,6 +518,15 @@ void assign_board_to_dynamic(int static_board[10][10], int **dynamic_board, int 
         for (int j = 0; j < cols; j++) {
             dynamic_board[i][j] = static_board[i][j]; // Atribui os valores
         }
+    }
+}
+
+void print_board(int board[10][10], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            printf("%d ", board[i][j]);
+        }
+        printf("\n");
     }
 }
 /////////////////////////////// COMANDOS DO JOGO ////////////////////////////
