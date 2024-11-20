@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     struct action msg;
     struct action msg_received;
     bool game_started = false;
-    bool game_ended = false;
+    bool game_end = false;
     
     const char *file = "input/maze.txt";
     int rows, cols;
@@ -73,17 +73,21 @@ int main(int argc, char *argv[]) {
     while (1) {
         char command[10];
 
-        if (game_ended == false){
+        if (game_end == false){
             printf("Digite um comando:\n(start, up, right, down, left, map, hint, reset, exit): ");
             scanf("%s", command);
 
             memset(&msg, 0, sizeof(msg));
 
-            if ((game_started = false) && (strcmp(command, "start") != 0)){
+            if ((game_started == false) && (strcmp(command, "start") != 0)){
                 perror("error: start the game first");
                 continue;
             }
-            
+
+            if((game_started == true) && (strcmp(command, "start") == 0)){
+                perror("error: the game is already running");
+                continue;
+            }
 
             if (strcmp(command, "exit") == 0){
                 msg.type = 7;
@@ -91,7 +95,7 @@ int main(int argc, char *argv[]) {
                 printf("Exiting... \n");
                 break;
             }
-            else if ((strcmp(command, "start") == 0) && game_started == false){
+            else if ((strcmp(command, "start") == 0) && (game_started == false)){
                 game_started = true;
                 msg.type = 0;
                 send(sockfd, &msg, sizeof(msg), 0);
@@ -101,29 +105,37 @@ int main(int argc, char *argv[]) {
                     print_possible_moves(msg.moves);
                 }
             }
-            else if ((strcmp(command, "start") == 0) && game_started == true){
+            else if ((strcmp(command, "start") == 0) && (game_started == true)){
                 printf("The game has been already started\n");
                 continue;
             }
             else if ((strcmp(command, "up") == 0) || (strcmp(command, "right") == 0) || (strcmp(command, "down") == 0) || (strcmp(command, "left") == 0)){
                 msg.type = 1;
                 msg.moves[0] = command_to_int(command);
+                int aux = command_to_int(command);
                 send(sockfd, &msg, sizeof(msg), 0);
                 recv(sockfd, &msg, sizeof(msg), 0);
 
-                if (msg.type == 4){
-                    print_possible_moves(msg.moves);
-                }
+                // int* possib_moves = malloc(4 * sizeof(int)); 
+                // assign_moves_to_dynamic(msg.board,possib_moves);
+                if(check_move(command,msg.moves)){
+                    if (msg.type == 4){
+                        print_possible_moves(msg.moves);
+                    }
 
-                if(msg.type == 5){
-                    printf("You escaped!\n");
-                    int **dynamic_buffer = create_filter_matrix(rows,cols);
-                    assign_board_to_dynamic(msg.board,dynamic_buffer,rows,cols);
-                    char_matrix = int_to_char_matrix(dynamic_buffer,rows,cols);
-                    print_char_matrix(char_matrix,rows,cols);
-                    game_ended = true;
-                    free_matrix(dynamic_buffer,rows);
-                    continue;
+                    if(msg.type == 5){
+                        printf("You escaped!\n");
+                        int **dynamic_buffer = create_filter_matrix(rows,cols);
+                        assign_board_to_dynamic(msg.board,dynamic_buffer,rows,cols);
+                        char_matrix = int_to_char_matrix(dynamic_buffer,rows,cols);
+                        print_char_matrix(char_matrix,rows,cols);
+                        game_end = true;
+                        free_matrix(dynamic_buffer,rows);
+                        continue;
+                    }
+                }
+                else {
+                    perror("error: you cannot go this way");
                 }
             }
             else if (strcmp(command, "map") == 0){
@@ -144,13 +156,16 @@ int main(int argc, char *argv[]) {
             else if (strcmp(command, "reset") == 0){
                 msg.type = 6;
                 send(sockfd, &msg, sizeof(msg), 0);
-                printf("Reseting game... \n");
+                recv(sockfd, &msg, sizeof(msg), 0);
+                print_possible_moves(msg.moves);
+                continue;
             } else {
                 perror("error: command not found");
                 continue;
             }
         }
-        else if (game_ended == true){
+        else if (game_end == true){
+            printf("Digite reset ou exit:\n");
             scanf("%s", command);
             if (strcmp(command, "exit") == 0){
                 break;
@@ -162,7 +177,10 @@ int main(int argc, char *argv[]) {
                 if (msg.type == 4){
                     print_possible_moves(msg.moves);
                 }
-                game_ended = false;
+                game_end = false;
+                continue;;
+            } else {
+                printf("Comando nao encontrado\n");
             }
         }
         else {

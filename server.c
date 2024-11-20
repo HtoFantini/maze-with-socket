@@ -125,9 +125,13 @@ int main(int argc, char *argv[]) {
             printf("Client disconnected.\n");
             break;
         }
-
-        if (msg.type == 0) {
+        if ((msg.type == 0) && (game_started == true)) {
+            perror("error: the game is already running");
+            continue;
+        }
+        if ((msg.type == 0) && (game_started == false)) {
             printf("Client started the game.\n");
+            game_started = true;
             msg.type = 4;
             start_game(maze,rows,cols);
 
@@ -156,6 +160,7 @@ int main(int argc, char *argv[]) {
             free(possib_moves);
         } else if (msg.type == 1) {
 
+            printf("game_ended? %d \n",game_ended(maze,rows,cols,root_maze));
             int_to_command(msg.moves[0], command);
             printf("%s\n", command);
 
@@ -170,7 +175,6 @@ int main(int argc, char *argv[]) {
             possib_moves = possible_moves(maze, rows, cols);
             adjust_array(possib_moves);
             printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
-            // *************************** POR ALGUM MOTIVO, NOVAMENTE, O POSSIBLE MOVES NAO FEZ O SLIDING WINDOW E CORRIGIU O VETOR *******************************
 
             memset(msg.moves, 0, sizeof(msg.moves));
             msg.moves[0] = possib_moves[0];
@@ -194,11 +198,42 @@ int main(int argc, char *argv[]) {
             free(possib_moves);
         } else if (msg.type == 2) {
             msg.type = 4;
-            printf("Client requested maze map");
-            copy_to_board(msg.board,maze,rows,cols);
+            printf("Client requested maze map\n");
+            copy_to_board(msg.board,apply_filter(maze,filter,rows,cols),rows,cols);
             print_board(msg.board,rows,cols);
             send(new_socket, &msg, sizeof(msg), 0);
-        } else {
+        } else if (msg.type == 6){
+            msg.type = 4;
+            game_end = false;
+            
+            for (int i = 0; i < rows; i++) {
+                memcpy(maze[i], root_maze[i], cols * sizeof(int));
+            }
+            printf("maze = root_maze\n");
+            print_maze(maze,rows,cols);
+            
+            printf("starting_game\n");
+            start_game(maze,rows,cols);
+            print_maze(maze,rows,cols);
+
+            clear_matrix(filter,rows,cols);
+            update_known_places(maze,filter,rows,cols);
+            int *possib_moves = possible_moves(maze, rows, cols);
+            adjust_array(possib_moves);
+
+            msg.moves[0] = possib_moves[0];
+            msg.moves[1] = possib_moves[1];
+            msg.moves[2] = possib_moves[2];
+            msg.moves[3] = possib_moves[3];
+
+            send(new_socket, &msg, sizeof(msg), 0);
+
+            free(possib_moves);
+        } else if (msg.type == 7){
+            printf("Client exit");
+            break;
+        }
+        else {
             printf("Unknown message type received.\n");
         }
     }
