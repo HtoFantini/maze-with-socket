@@ -555,13 +555,6 @@ int game_ended (int **matrix, int rows, int cols, int **root_matrix){
     int *player_loc = locate_player(matrix, rows, cols);
     int *exit_loc = locate_exit(root_matrix, rows, cols);
 
-    printf("Printing root_maze \n");
-    print_maze(root_matrix,rows,cols);
-    printf("printing maze\n");
-    print_maze(matrix,rows,cols);
-    printf("\nplayer_loc: %d %d", player_loc[0],player_loc[1]);
-    printf("exit_loc: %d %d", exit_loc[0],exit_loc[1]);
-
     if((player_loc[0] == exit_loc[0]) && (player_loc[1] == exit_loc[1])){
         free(player_loc);
         free(exit_loc);
