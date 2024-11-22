@@ -80,11 +80,13 @@ int main(int argc, char *argv[]) {
 
             if ((game_started == false) && (strcmp(command, "start") != 0)){
                 perror("error: start the game first");
+                printf("\n");
                 continue;
             }
 
             if((game_started == true) && (strcmp(command, "start") == 0)){
                 perror("error: the game is already running");
+                printf("\n");
                 continue;
             }
 
@@ -116,8 +118,13 @@ int main(int argc, char *argv[]) {
                 recv(sockfd, &msg, sizeof(msg), 0);
 
                     if (msg.type == 4){
-                        print_possible_moves(msg.moves);
+                        if (msg.moves[0] == 9){
+                        perror("error: you cannot go this way");
                         printf("\n");
+                        } else {
+                            print_possible_moves(msg.moves);
+                            printf("\n");
+                        }
                     }
 
                     if(msg.type == 5){
@@ -139,21 +146,25 @@ int main(int argc, char *argv[]) {
                 assign_board_to_dynamic(msg.board,dynamic_buffer,rows,cols);
                 char_matrix = int_to_char_matrix(dynamic_buffer,rows,cols);
                 print_char_matrix(char_matrix,rows,cols);
+                printf("\n");
                 free_matrix(dynamic_buffer,rows);
             }
             else if (strcmp(command, "hint") == 0){
                 msg.type = 3;
                 send(sockfd, &msg, sizeof(msg), 0);
                 printf("Printing hint... \n");
+                printf("\n");
             }
             else if (strcmp(command, "reset") == 0){
                 msg.type = 6;
                 send(sockfd, &msg, sizeof(msg), 0);
                 recv(sockfd, &msg, sizeof(msg), 0);
                 print_possible_moves(msg.moves);
+                printf("\n");
                 continue;
             } else {
                 perror("error: command not found");
+                printf("\n");
                 continue;
             }
         }
@@ -169,6 +180,7 @@ int main(int argc, char *argv[]) {
                 recv(sockfd, &msg, sizeof(msg), 0);
                 if (msg.type == 4){
                     print_possible_moves(msg.moves);
+                    printf("\n");
                 }
                 game_end = false;
                 continue;;
