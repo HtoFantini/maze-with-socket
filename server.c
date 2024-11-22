@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
 
             free(possib_moves);
         } else if (msg.type == 7){
-            printf("Client exit");
+            printf("Client disconnected");
             break;
         }
         else {

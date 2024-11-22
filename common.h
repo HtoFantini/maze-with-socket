@@ -42,8 +42,7 @@ void assign_moves_to_dynamic(int static_moves[4], int *dynamic_moves);
 void print_board(int board[10][10], int rows, int cols);
 void clear_matrix(int **matrix, int rows, int cols);
 
-// Declaração das funções relacionadas aos comandos do jogo
 void start_game(int **matrix, int rows, int cols);
 int game_ended (int **matrix, int rows, int cols, int **root_matrix);
 
-#endif // COMMON_H
+#endif
