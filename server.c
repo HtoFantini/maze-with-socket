@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "common.c"
+#include "common.h"
 
 void int_to_command(int move, char *command) {
     if (move == 1) {

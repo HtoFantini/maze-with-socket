@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>  
+#include "common.h"
 
 #define MIN_ROWS 5
 #define MIN_COLS 5
@@ -51,6 +52,7 @@ int* locate_exit(int **matrix, int rows, int cols){
     }
 
     perror("Exit not found");
+    return location; 
 }
 
 int* locate_entry(int **matrix, int rows, int cols){
@@ -70,6 +72,7 @@ int* locate_entry(int **matrix, int rows, int cols){
     }
 
     perror("Entry not found");
+    return location; 
 }
 
 int* next_neighbours(int **matrix, int rows, int cols) {
@@ -185,7 +188,7 @@ int* can_move(int **matrix, int rows, int cols){
 int* possible_moves(int **matrix, int rows, int cols){
     int *poss_moves = can_move(matrix,rows,cols);
     printf("can_move result: %d %d %d %d\n", poss_moves[0], poss_moves[1], poss_moves[2], poss_moves[3]);
-    unsigned i,j = 0;
+    unsigned i = 0, j = 0;
 
     while(i < 4) {
         if (poss_moves[i] == 0){
@@ -566,74 +569,74 @@ int game_ended (int **matrix, int rows, int cols, int **root_matrix){
 }
 
 
-int main2() {
-    const char *file = "input/maze.txt";
-    int rows, cols;
+// int main2() {
+//     const char *file = "input/maze.txt";
+//     int rows, cols;
 
-    printf("Carregando dimensões da matriz...\n");
-    load_rows_and_cols(file, &rows, &cols);
-    printf("Dimensões carregadas: %dx%d\n", rows, cols);
+//     printf("Carregando dimensões da matriz...\n");
+//     load_rows_and_cols(file, &rows, &cols);
+//     printf("Dimensões carregadas: %dx%d\n", rows, cols);
 
-    printf("Carregando labirinto...\n");
-    int **maze = load_maze(file, rows, cols);
-    int **root_maze = load_maze(file, rows, cols);
-    int **filter = create_filter_matrix(rows, cols);
-    char **char_matrix;
+//     printf("Carregando labirinto...\n");
+//     int **maze = load_maze(file, rows, cols);
+//     int **root_maze = load_maze(file, rows, cols);
+//     int **filter = create_filter_matrix(rows, cols);
+//     char **char_matrix;
 
-    if (!maze || !root_maze || !filter) {
-        fprintf(stderr, "Erro ao carregar as matrizes.\n");
-        return EXIT_FAILURE;
-    }
+//     if (!maze || !root_maze || !filter) {
+//         fprintf(stderr, "Erro ao carregar as matrizes.\n");
+//         return EXIT_FAILURE;
+//     }
 
-    start_game(maze, rows, cols);
+//     start_game(maze, rows, cols);
 
-    char command[10];
-    while(true) {
-        update_known_places(maze, filter, rows, cols);
+//     char command[10];
+//     while(true) {
+//         update_known_places(maze, filter, rows, cols);
 
-        printf("\nMatriz Atual:\n");
-        char_matrix = int_to_char_matrix(apply_filter(maze, filter, rows, cols), rows, cols);
-        print_char_matrix(char_matrix,rows, cols);
+//         printf("\nMatriz Atual:\n");
+//         char_matrix = int_to_char_matrix(apply_filter(maze, filter, rows, cols), rows, cols);
+//         print_char_matrix(char_matrix,rows, cols);
 
-        printf("\nMovimentos possíveis: \n");
-        int *possib_moves = possible_moves(maze, rows, cols);
-        if (!possib_moves) {
-            fprintf(stderr, "Erro ao calcular movimentos possíveis.\n");
-            break;
-        }
-        print_possible_moves(possib_moves);
-        printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
+//         printf("\nMovimentos possíveis: \n");
+//         int *possib_moves = possible_moves(maze, rows, cols);
+//         if (!possib_moves) {
+//             fprintf(stderr, "Erro ao calcular movimentos possíveis.\n");
+//             break;
+//         }
+//         print_possible_moves(possib_moves);
+//         printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
 
-        printf("\nDigite o movimento (1=Cima, 2=Direita, 3=Baixo, 4=Esquerda, 0=Sair): ");
-        if (scanf("%s", command) != 1) {
-            fprintf(stderr, "Entrada inválida. Saindo...\n");
-            break;
-        }
+//         printf("\nDigite o movimento (1=Cima, 2=Direita, 3=Baixo, 4=Esquerda, 0=Sair): ");
+//         if (scanf("%s", command) != 1) {
+//             fprintf(stderr, "Entrada inválida. Saindo...\n");
+//             break;
+//         }
 
-       if (check_move(command, possib_moves) == 0){
-        continue;
-       } else {
-            move_player(maze, rows, cols, root_maze, command);
-       }
+//        if (check_move(command, possib_moves) == 0){
+//         continue;
+//        } else {
+//             move_player(maze, rows, cols, root_maze, command);
+//        }
 
-        free(possib_moves);
+//         free(possib_moves);
 
-        if (game_ended(maze, rows, cols, root_maze)) {
-            printf("Win!\n");
-            break;
-        }
+//         if (game_ended(maze, rows, cols, root_maze)) {
+//             printf("Win!\n");
+//             break;
+//         }
 
-    }
+//     }
 
-    // Liberando a memória alocada
-    free_char_matrix(char_matrix, rows);
-    // free(vec);
-    // free(neighbours);
-    // free(moves);
-    // free(poss_moves);
-    free_matrix(maze, rows);
-    free_matrix(root_maze, rows);
-    free_matrix(filter, rows);
+//     // Liberando a memória alocada
+//     free_char_matrix(char_matrix, rows);
+//     // free(vec);
+//     // free(neighbours);
+//     // free(moves);
+//     // free(poss_moves);
+//     free_matrix(maze, rows);
+//     free_matrix(root_maze, rows);
+//     free_matrix(filter, rows);
 
-    return 0;
-}
+//     return 0;
+// }

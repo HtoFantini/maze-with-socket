@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <string.h>
-#include "common.c"
+#include "common.h"
 
 struct action {
     int type;
@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
     printf("Conectado ao servidor\n");
     
     struct action msg;
-    struct action msg_received;
     bool game_started = false;
     bool game_end = false;
     
