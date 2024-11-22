@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <string.h>
-#include "utils.c"
+#include "common.c"
 
 struct action {
     int type;
