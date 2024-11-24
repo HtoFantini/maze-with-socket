@@ -320,7 +320,6 @@ void adjust_array(int *vec) {
 }
 
 ////////////////////////// MANIPULACAO DE MATRIZES /////////////////////////////
-
 void load_rows_and_cols(const char *file_name, int *rows, int *cols) {
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
@@ -331,26 +330,46 @@ void load_rows_and_cols(const char *file_name, int *rows, int *cols) {
     *rows = 0;
     *cols = 0;
     int aux_cols = 0;
+    int current_cols = 0;
     char ch;
+    bool is_first_line = true;
 
-    // Contagem de linhas e colunas
     while ((ch = fgetc(file)) != EOF) {
         if (ch == ' ') {
             aux_cols++;
         } else if (ch == '\n') {
-            (*rows)++;
-            if (*cols == 0) {
-                *cols = aux_cols + 1;
+            current_cols = aux_cols + 1;
+            if (is_first_line) {
+                *cols = current_cols;
+                is_first_line = false;
+            } else if (current_cols != *cols) {
+                fprintf(stderr, "error: inconsistent number of columns in the maze.\n");
+                fclose(file);
+                exit(EXIT_FAILURE);
             }
+            (*rows)++;
             aux_cols = 0;
         }
     }
 
+    // Verifica a última linha, caso não termine com '\n'.
+    if (aux_cols > 0) {
+        current_cols = aux_cols + 1;
+        if (is_first_line) {
+            *cols = current_cols;
+        } else if (current_cols != *cols) {
+            fprintf(stderr, "error: inconsistent number of columns in the maze.\n");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        (*rows)++;
+    }
+
     fclose(file);
 
-    if(*rows < MIN_ROWS || *cols < MIN_COLS || *rows > MAX_ROWS|| *cols > MAX_COLS){
+    if (*rows < MIN_ROWS || *cols < MIN_COLS || *rows > MAX_ROWS || *cols > MAX_COLS) {
         fprintf(stderr, "error: Labirinto de tamanho inadequado! Seu tamanho deve ser entre %dx%d e %dx%d.\n",
-        MIN_ROWS, MIN_COLS, MAX_ROWS, MAX_COLS);
+                MIN_ROWS, MIN_COLS, MAX_ROWS, MAX_COLS);
         exit(EXIT_FAILURE);
     }
 }
@@ -411,26 +430,45 @@ int** create_filter_matrix(int rows, int cols){
 }
 
 void update_known_places(int **matrix, int **filter_matrix, int rows, int cols){
-    int * player_loc = locate_player(matrix,rows,cols);
+    int * player_loc = locate_player(matrix, rows, cols);
 
     // current location
     filter_matrix[player_loc[0]][player_loc[1]] = 1;
+
     // up
-    if(player_loc[0]-1 > 0){
-        filter_matrix[player_loc[0]-1][player_loc[1]] = 1;
+    if (player_loc[0] - 1 >= 0) {
+        filter_matrix[player_loc[0] - 1][player_loc[1]] = 1;
     }
     // right
-    if(player_loc[1]+1 <= cols-1){
-        filter_matrix[player_loc[0]][player_loc[1]+1] = 1;
+    if (player_loc[1] + 1 < cols) {
+        filter_matrix[player_loc[0]][player_loc[1] + 1] = 1;
     }
     // down
-    if(player_loc[0]+1 <= rows-1){
-        filter_matrix[player_loc[0]+1][player_loc[1]] = 1;
+    if (player_loc[0] + 1 < rows) {
+        filter_matrix[player_loc[0] + 1][player_loc[1]] = 1;
     }
     // left
-    if(player_loc[1]-1 > 0){
-        filter_matrix[player_loc[0]][player_loc[1]-1] = 1;
+    if (player_loc[1] - 1 >= 0) {
+        filter_matrix[player_loc[0]][player_loc[1] - 1] = 1;
     }
+    // diagonal up-right
+    if (player_loc[0] - 1 >= 0 && player_loc[1] + 1 < cols) {
+        filter_matrix[player_loc[0] - 1][player_loc[1] + 1] = 1;
+    }
+    // diagonal down-right
+    if (player_loc[0] + 1 < rows && player_loc[1] + 1 < cols) {
+        filter_matrix[player_loc[0] + 1][player_loc[1] + 1] = 1;
+    }
+    // diagonal down-left
+    if (player_loc[0] + 1 < rows && player_loc[1] - 1 >= 0) {
+        filter_matrix[player_loc[0] + 1][player_loc[1] - 1] = 1;
+    }
+    // diagonal up-left
+    if (player_loc[0] - 1 >= 0 && player_loc[1] - 1 >= 0) { 
+        filter_matrix[player_loc[0] - 1][player_loc[1] - 1] = 1;
+    }
+
+    free(player_loc);
 }
 
 int** apply_filter(int** current_matrix, int** filter_matrix, int rows, int cols){

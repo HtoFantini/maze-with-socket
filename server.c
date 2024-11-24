@@ -98,16 +98,14 @@ int main(int argc, char *argv[]) {
 
     struct action msg;
     bool game_started = false;
-    bool game_end = false;
+    //bool game_end = false;
 
-    const char *file = "input/maze.txt";
+    const char *file = argv[4];
     int rows, cols;
 
-    printf("Carregando dimensões da matriz...\n");
     load_rows_and_cols(file, &rows, &cols);
     printf("Dimensões carregadas: %dx%d\n", rows, cols);
 
-    printf("Carregando labirinto...\n");
     int **maze = load_maze(file, rows, cols);
     int **root_maze = load_maze(file, rows, cols);
     int **filter = create_filter_matrix(rows, cols);
@@ -160,7 +158,7 @@ int main(int argc, char *argv[]) {
             free(possib_moves);
         } else if (msg.type == 1) {
 
-            printf("game_ended? %d \n",game_ended(maze,rows,cols,root_maze));
+            //printf("game_ended? %d \n",game_ended(maze,rows,cols,root_maze));
             int_to_command(msg.moves[0], command);
             printf("%s\n", command);
 
@@ -184,7 +182,7 @@ int main(int argc, char *argv[]) {
 
                 if (game_ended(maze, rows, cols, root_maze)){
                     msg.type = 5;
-                    game_end = true;
+                    //game_end = true;
                     copy_to_board(msg.board,root_maze,rows,cols);
                     print_board(msg.board,rows,cols);
                 } else {
@@ -208,7 +206,7 @@ int main(int argc, char *argv[]) {
             send(new_socket, &msg, sizeof(msg), 0);
         } else if (msg.type == 6){
             msg.type = 4;
-            game_end = false;
+            //game_end = false;
             
             for (int i = 0; i < rows; i++) {
                 memcpy(maze[i], root_maze[i], cols * sizeof(int));

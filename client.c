@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     bool game_started = false;
     bool game_end = false;
     
-    const char *file = "input/maze.txt";
+    const char *file = "input/in.txt";
     int rows, cols;
     load_rows_and_cols(file, &rows, &cols);
     char **char_matrix;
@@ -78,6 +78,13 @@ int main(int argc, char *argv[]) {
 
             memset(&msg, 0, sizeof(msg));
 
+            if (strcmp(command, "exit") == 0){
+                msg.type = 7;
+                send(sockfd, &msg, sizeof(msg), 0);
+                printf("Exiting... \n");
+                break;
+            }
+
             if ((game_started == false) && (strcmp(command, "start") != 0)){
                 perror("error: start the game first");
                 printf("\n");
@@ -88,13 +95,6 @@ int main(int argc, char *argv[]) {
                 perror("error: the game is already running");
                 printf("\n");
                 continue;
-            }
-
-            if (strcmp(command, "exit") == 0){
-                msg.type = 7;
-                send(sockfd, &msg, sizeof(msg), 0);
-                printf("Exiting... \n");
-                break;
             }
             else if ((strcmp(command, "start") == 0) && (game_started == false)){
                 game_started = true;
