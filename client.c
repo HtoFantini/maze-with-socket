@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     }
 
     freeaddrinfo(res);
-    printf("Conectado ao servidor\n");
+    //printf("Conectado ao servidor\n");
     
     struct action msg;
     bool game_started = false;
@@ -66,14 +66,14 @@ int main(int argc, char *argv[]) {
     const char *file = "input/in.txt";
     int rows, cols;
     load_rows_and_cols(file, &rows, &cols);
-    char **char_matrix;
+    char **char_matrix = NULL;
     int **filter = create_filter_matrix(rows, cols);
 
     while (1) {
         char command[10];
 
         if (game_end == false){
-            printf("Digite um comando:\n(start, up, right, down, left, map, hint, reset, exit): ");
+            //printf("Digite um comando:\n(start, up, right, down, left, map, hint, reset, exit): ");
             scanf("%s", command);
 
             memset(&msg, 0, sizeof(msg));
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
             if (strcmp(command, "exit") == 0){
                 msg.type = 7;
                 send(sockfd, &msg, sizeof(msg), 0);
-                printf("Exiting... \n");
+                //printf("Exiting... \n");
                 break;
             }
 
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
             }
         }
         else if (game_end == true){
-            printf("\nDigite reset ou exit:\n");
+            //printf("\nDigite reset ou exit:\n");
             scanf("%s", command);
             if (strcmp(command, "exit") == 0){
                 break;
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
                 game_end = false;
                 continue;;
             } else {
-                printf("Comando nao encontrado\n");
+                perror("error: command not found");
             }
         }
         else {

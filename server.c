@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("Servidor aguardando conexão na porta %d...\n", porta);
+    //printf("Servidor aguardando conexão na porta %d...\n", porta);
 
     int new_socket;
     struct sockaddr_storage their_addr;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("Conexão estabelecida com o cliente\n");
+    printf("client connected\n");
 
     struct action msg;
     bool game_started = false;
@@ -104,12 +104,12 @@ int main(int argc, char *argv[]) {
     int rows, cols;
 
     load_rows_and_cols(file, &rows, &cols);
-    printf("Dimensões carregadas: %dx%d\n", rows, cols);
+    //printf("Dimensões carregadas: %dx%d\n", rows, cols);
 
     int **maze = load_maze(file, rows, cols);
     int **root_maze = load_maze(file, rows, cols);
     int **filter = create_filter_matrix(rows, cols);
-    char **char_matrix;
+    char **char_matrix = NULL;
 
     if (!maze || !root_maze || !filter) {
         fprintf(stderr, "Erro ao carregar as matrizes.\n");
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         char command[10];
         if (recv(new_socket, &msg, sizeof(msg), 0) <= 0) {
-            printf("Client disconnected.\n");
+            printf("client disconnected\n");
             break;
         }
         if ((msg.type == 0) && (game_started == true)) {
@@ -128,25 +128,25 @@ int main(int argc, char *argv[]) {
             continue;
         }
         if ((msg.type == 0) && (game_started == false)) {
-            printf("Client started the game.\n");
+            printf("starting new game\n");
             game_started = true;
             msg.type = 4;
             start_game(maze,rows,cols);
 
             update_known_places(maze, filter, rows, cols);
 
-            printf("\nMatriz Atual:\n");
+            //printf("\nMatriz Atual:\n");
             char_matrix = int_to_char_matrix(apply_filter(maze, filter, rows, cols), rows, cols);
-            print_char_matrix(char_matrix,rows, cols);
+            //print_char_matrix(char_matrix,rows, cols);
 
-            printf("\nMovimentos possíveis: \n");
+            //printf("\nMovimentos possíveis: \n");
             int *possib_moves = possible_moves(maze, rows, cols);
             if (!possib_moves) {
                 fprintf(stderr, "Erro ao calcular movimentos possíveis.\n");
                 break;
             }
-            print_possible_moves(possib_moves);
-            printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
+            //print_possible_moves(possib_moves);
+            //printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
 
             msg.moves[0] = possib_moves[0];
             msg.moves[1] = possib_moves[1];
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
             //printf("game_ended? %d \n",game_ended(maze,rows,cols,root_maze));
             int_to_command(msg.moves[0], command);
-            printf("%s\n", command);
+            //printf("%s\n", command);
 
             int *possib_moves = possible_moves(maze, rows, cols);
 
@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) {
                 update_known_places(maze, filter, rows, cols);
             
 
-                print_maze(maze,rows,cols);
+                //print_maze(maze,rows,cols);
                 possib_moves = possible_moves(maze, rows, cols);
                 adjust_array(possib_moves);
-                printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
+                //printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
 
                 memset(msg.moves, 0, sizeof(msg.moves));
                 msg.moves[0] = possib_moves[0];
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
                     msg.type = 5;
                     //game_end = true;
                     copy_to_board(msg.board,root_maze,rows,cols);
-                    print_board(msg.board,rows,cols);
+                    //print_board(msg.board,rows,cols);
                 } else {
                     msg.type=4;
                 }
@@ -195,14 +195,14 @@ int main(int argc, char *argv[]) {
 
             send(new_socket, &msg, sizeof(msg), 0);
 
-            printf("Player moved. Updated possible moves sent to client.\n");
+            //printf("Player moved. Updated possible moves sent to client.\n");
 
             free(possib_moves);
         } else if (msg.type == 2) {
             msg.type = 4;
-            printf("Client requested maze map\n");
+            //printf("Client requested maze map\n");
             copy_to_board(msg.board,apply_filter(maze,filter,rows,cols),rows,cols);
-            print_board(msg.board,rows,cols);
+            //print_board(msg.board,rows,cols);
             send(new_socket, &msg, sizeof(msg), 0);
         } else if (msg.type == 6){
             msg.type = 4;
@@ -211,12 +211,12 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < rows; i++) {
                 memcpy(maze[i], root_maze[i], cols * sizeof(int));
             }
-            printf("maze = root_maze\n");
-            print_maze(maze,rows,cols);
+            //printf("maze = root_maze\n");
+            //print_maze(maze,rows,cols);
             
             printf("starting new game\n");
             start_game(maze,rows,cols);
-            print_maze(maze,rows,cols);
+            //print_maze(maze,rows,cols);
 
             clear_matrix(filter,rows,cols);
             update_known_places(maze,filter,rows,cols);
@@ -232,13 +232,14 @@ int main(int argc, char *argv[]) {
 
             free(possib_moves);
         } else if (msg.type == 7){
-            printf("Client disconnected\n");
+            printf("client disconnected\n");
             break;
         }
         else {
             printf("Unknown message type received.\n");
         }
     }
+
 
     close(new_socket);
     close(server_fd);
