@@ -147,6 +147,12 @@ int main(int argc, char *argv[]) {
             }
             //print_possible_moves(possib_moves);
             //printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
+            
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
+                    msg.board[i][j] = 9;
+                }
+            }
 
             msg.moves[0] = possib_moves[0];
             msg.moves[1] = possib_moves[1];

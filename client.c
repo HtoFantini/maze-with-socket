@@ -63,12 +63,10 @@ int main(int argc, char *argv[]) {
     bool game_started = false;
     bool game_end = false;
     
-    const char *file = "input/in.txt";
     int rows, cols;
-    load_rows_and_cols(file, &rows, &cols);
+    int **filter = NULL;
     char **char_matrix = NULL;
-    int **filter = create_filter_matrix(rows, cols);
-
+    
     while (1) {
         char command[10];
 
@@ -101,6 +99,9 @@ int main(int argc, char *argv[]) {
                 msg.type = 0;
                 send(sockfd, &msg, sizeof(msg), 0);
                 recv(sockfd, &msg, sizeof(msg), 0);
+
+                read_matrix_size(msg.board,&rows,&cols);
+                filter = create_filter_matrix(rows, cols);
 
                 if (msg.type == 4){
                     print_possible_moves(msg.moves);

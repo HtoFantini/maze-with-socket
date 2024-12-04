@@ -30,6 +30,7 @@ void load_rows_and_cols(const char *file_name, int *rows, int *cols);
 int** load_maze(const char *file_name, int rows, int cols);
 void print_maze(int **matrix, int rows, int cols);
 void free_matrix(int **matrix, int rows);
+void read_matrix_size(int matrix[10][10], int *rows, int *cols);
 int** create_filter_matrix(int rows, int cols);
 void update_known_places(int **matrix, int **filter_matrix, int rows, int cols);
 int** apply_filter(int** current_matrix, int** filter_matrix, int rows, int cols);

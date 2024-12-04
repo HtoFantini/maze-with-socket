@@ -414,6 +414,28 @@ void free_matrix(int **matrix, int rows) {
     free(matrix);
 }
 
+void read_matrix_size(int matrix[10][10], int *rows, int *cols) {
+    int maxRow = 0;
+    int maxCol = 0;
+
+    for (int i = 0; i < 10; i++) {
+        int rowHasData = 0;
+        for (int j = 0; j < 10; j++) {
+            if (matrix[i][j] == 9) {
+                rowHasData = 1; 
+                if (j + 1 > maxCol) {
+                    maxCol = j + 1;
+                }
+            }
+        }
+        if (rowHasData) {
+            maxRow = i + 1;
+        }
+    }
+    *rows = maxRow;
+    *cols = maxCol;
+}
+
 int** create_filter_matrix(int rows, int cols){
     int **matrix = (int**)malloc(rows * sizeof(int*));
     for (unsigned i = 0; i < rows; i++) {
