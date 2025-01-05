@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>  
+#include "common.h"
 
 #define MIN_ROWS 5
 #define MIN_COLS 5
@@ -51,6 +52,7 @@ int* locate_exit(int **matrix, int rows, int cols){
     }
 
     perror("Exit not found");
+    return location; 
 }
 
 int* locate_entry(int **matrix, int rows, int cols){
@@ -70,6 +72,7 @@ int* locate_entry(int **matrix, int rows, int cols){
     }
 
     perror("Entry not found");
+    return location; 
 }
 
 int* next_neighbours(int **matrix, int rows, int cols) {
@@ -184,8 +187,8 @@ int* can_move(int **matrix, int rows, int cols){
 
 int* possible_moves(int **matrix, int rows, int cols){
     int *poss_moves = can_move(matrix,rows,cols);
-    printf("can_move result: %d %d %d %d\n", poss_moves[0], poss_moves[1], poss_moves[2], poss_moves[3]);
-    unsigned i,j = 0;
+    //printf("can_move result: %d %d %d %d\n", poss_moves[0], poss_moves[1], poss_moves[2], poss_moves[3]);
+    unsigned i = 0, j = 0;
 
     while(i < 4) {
         if (poss_moves[i] == 0){
@@ -297,7 +300,7 @@ int check_move(const char *command, int *possib_moves) {
         }
     }
 
-    printf("error: you cannot go this way\n");
+    //printf("error: you cannot go this way\n");
     return 0;  
 }
 
@@ -317,7 +320,6 @@ void adjust_array(int *vec) {
 }
 
 ////////////////////////// MANIPULACAO DE MATRIZES /////////////////////////////
-
 void load_rows_and_cols(const char *file_name, int *rows, int *cols) {
     FILE *file = fopen(file_name, "r");
     if (file == NULL) {
@@ -328,26 +330,46 @@ void load_rows_and_cols(const char *file_name, int *rows, int *cols) {
     *rows = 0;
     *cols = 0;
     int aux_cols = 0;
+    int current_cols = 0;
     char ch;
+    bool is_first_line = true;
 
-    // Contagem de linhas e colunas
     while ((ch = fgetc(file)) != EOF) {
         if (ch == ' ') {
             aux_cols++;
         } else if (ch == '\n') {
-            (*rows)++;
-            if (*cols == 0) {
-                *cols = aux_cols + 1;
+            current_cols = aux_cols + 1;
+            if (is_first_line) {
+                *cols = current_cols;
+                is_first_line = false;
+            } else if (current_cols != *cols) {
+                fprintf(stderr, "error: inconsistent number of columns in the maze.\n");
+                fclose(file);
+                exit(EXIT_FAILURE);
             }
+            (*rows)++;
             aux_cols = 0;
         }
     }
 
+    // Verifica a última linha, caso não termine com '\n'.
+    if (aux_cols > 0) {
+        current_cols = aux_cols + 1;
+        if (is_first_line) {
+            *cols = current_cols;
+        } else if (current_cols != *cols) {
+            fprintf(stderr, "error: inconsistent number of columns in the maze.\n");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        (*rows)++;
+    }
+
     fclose(file);
 
-    if(*rows < MIN_ROWS || *cols < MIN_COLS || *rows > MAX_ROWS|| *cols > MAX_COLS){
+    if (*rows < MIN_ROWS || *cols < MIN_COLS || *rows > MAX_ROWS || *cols > MAX_COLS) {
         fprintf(stderr, "error: Labirinto de tamanho inadequado! Seu tamanho deve ser entre %dx%d e %dx%d.\n",
-        MIN_ROWS, MIN_COLS, MAX_ROWS, MAX_COLS);
+                MIN_ROWS, MIN_COLS, MAX_ROWS, MAX_COLS);
         exit(EXIT_FAILURE);
     }
 }
@@ -379,7 +401,7 @@ int** load_maze(const char *file_name, int rows, int cols) {
 void print_maze(int **matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            printf("%d ", matrix[i][j]);
+            printf("%d\t", matrix[i][j]);
         }
         printf("\n");
     }
@@ -390,6 +412,28 @@ void free_matrix(int **matrix, int rows) {
         free(matrix[i]);
     }
     free(matrix);
+}
+
+void read_matrix_size(int matrix[10][10], int *rows, int *cols) {
+    int maxRow = 0;
+    int maxCol = 0;
+
+    for (int i = 0; i < 10; i++) {
+        int rowHasData = 0;
+        for (int j = 0; j < 10; j++) {
+            if (matrix[i][j] == 9) {
+                rowHasData = 1; 
+                if (j + 1 > maxCol) {
+                    maxCol = j + 1;
+                }
+            }
+        }
+        if (rowHasData) {
+            maxRow = i + 1;
+        }
+    }
+    *rows = maxRow;
+    *cols = maxCol;
 }
 
 int** create_filter_matrix(int rows, int cols){
@@ -408,26 +452,45 @@ int** create_filter_matrix(int rows, int cols){
 }
 
 void update_known_places(int **matrix, int **filter_matrix, int rows, int cols){
-    int * player_loc = locate_player(matrix,rows,cols);
+    int * player_loc = locate_player(matrix, rows, cols);
 
     // current location
     filter_matrix[player_loc[0]][player_loc[1]] = 1;
+
     // up
-    if(player_loc[0]-1 > 0){
-        filter_matrix[player_loc[0]-1][player_loc[1]] = 1;
+    if (player_loc[0] - 1 >= 0) {
+        filter_matrix[player_loc[0] - 1][player_loc[1]] = 1;
     }
     // right
-    if(player_loc[1]+1 <= cols-1){
-        filter_matrix[player_loc[0]][player_loc[1]+1] = 1;
+    if (player_loc[1] + 1 < cols) {
+        filter_matrix[player_loc[0]][player_loc[1] + 1] = 1;
     }
     // down
-    if(player_loc[0]+1 <= rows-1){
-        filter_matrix[player_loc[0]+1][player_loc[1]] = 1;
+    if (player_loc[0] + 1 < rows) {
+        filter_matrix[player_loc[0] + 1][player_loc[1]] = 1;
     }
     // left
-    if(player_loc[1]-1 > 0){
-        filter_matrix[player_loc[0]][player_loc[1]-1] = 1;
+    if (player_loc[1] - 1 >= 0) {
+        filter_matrix[player_loc[0]][player_loc[1] - 1] = 1;
     }
+    // diagonal up-right
+    if (player_loc[0] - 1 >= 0 && player_loc[1] + 1 < cols) {
+        filter_matrix[player_loc[0] - 1][player_loc[1] + 1] = 1;
+    }
+    // diagonal down-right
+    if (player_loc[0] + 1 < rows && player_loc[1] + 1 < cols) {
+        filter_matrix[player_loc[0] + 1][player_loc[1] + 1] = 1;
+    }
+    // diagonal down-left
+    if (player_loc[0] + 1 < rows && player_loc[1] - 1 >= 0) {
+        filter_matrix[player_loc[0] + 1][player_loc[1] - 1] = 1;
+    }
+    // diagonal up-left
+    if (player_loc[0] - 1 >= 0 && player_loc[1] - 1 >= 0) { 
+        filter_matrix[player_loc[0] - 1][player_loc[1] - 1] = 1;
+    }
+
+    free(player_loc);
 }
 
 int** apply_filter(int** current_matrix, int** filter_matrix, int rows, int cols){
@@ -485,7 +548,7 @@ char** int_to_char_matrix(int** matrix, int rows, int cols){
 void print_char_matrix(char** char_matrix, int rows, int cols){
     for (unsigned i = 0; i < rows; i++) {
         for (unsigned j = 0; j < cols; j++) {
-            printf("%c ", char_matrix[i][j]);
+            printf("%c\t", char_matrix[i][j]);
         }
         printf("\n");
     }
@@ -521,12 +584,26 @@ void assign_board_to_dynamic(int static_board[10][10], int **dynamic_board, int 
     }
 }
 
+void assign_moves_to_dynamic(int static_moves[4], int *dynamic_moves) {
+    for (int i = 0; i < 4; i++) {
+        dynamic_moves[i] = static_moves[i];
+    }
+}
+
 void print_board(int board[10][10], int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            printf("%d ", board[i][j]);
+            printf("%d\t", board[i][j]);
         }
         printf("\n");
+    }
+}
+
+void clear_matrix(int **matrix, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = 0;
+        }
     }
 }
 /////////////////////////////// COMANDOS DO JOGO ////////////////////////////
@@ -548,78 +625,5 @@ int game_ended (int **matrix, int rows, int cols, int **root_matrix){
     }
     free(player_loc);
     free(exit_loc);
-    return 0;
-}
-
-
-int main2() {
-    const char *file = "input/maze.txt";
-    int rows, cols;
-
-    printf("Carregando dimensões da matriz...\n");
-    load_rows_and_cols(file, &rows, &cols);
-    printf("Dimensões carregadas: %dx%d\n", rows, cols);
-
-    printf("Carregando labirinto...\n");
-    int **maze = load_maze(file, rows, cols);
-    int **root_maze = load_maze(file, rows, cols);
-    int **filter = create_filter_matrix(rows, cols);
-    char **char_matrix;
-
-    if (!maze || !root_maze || !filter) {
-        fprintf(stderr, "Erro ao carregar as matrizes.\n");
-        return EXIT_FAILURE;
-    }
-
-    start_game(maze, rows, cols);
-
-    char command[10];
-    while(true) {
-        update_known_places(maze, filter, rows, cols);
-
-        printf("\nMatriz Atual:\n");
-        char_matrix = int_to_char_matrix(apply_filter(maze, filter, rows, cols), rows, cols);
-        print_char_matrix(char_matrix,rows, cols);
-
-        printf("\nMovimentos possíveis: \n");
-        int *possib_moves = possible_moves(maze, rows, cols);
-        if (!possib_moves) {
-            fprintf(stderr, "Erro ao calcular movimentos possíveis.\n");
-            break;
-        }
-        print_possible_moves(possib_moves);
-        printf("%d %d %d %d\n", possib_moves[0], possib_moves[1], possib_moves[2], possib_moves[3]);
-
-        printf("\nDigite o movimento (1=Cima, 2=Direita, 3=Baixo, 4=Esquerda, 0=Sair): ");
-        if (scanf("%s", command) != 1) {
-            fprintf(stderr, "Entrada inválida. Saindo...\n");
-            break;
-        }
-
-       if (check_move(command, possib_moves) == 0){
-        continue;
-       } else {
-            move_player(maze, rows, cols, root_maze, command);
-       }
-
-        free(possib_moves);
-
-        if (game_ended(maze, rows, cols, root_maze)) {
-            printf("Win!\n");
-            break;
-        }
-
-    }
-
-    // Liberando a memória alocada
-    free_char_matrix(char_matrix, rows);
-    // free(vec);
-    // free(neighbours);
-    // free(moves);
-    // free(poss_moves);
-    free_matrix(maze, rows);
-    free_matrix(root_maze, rows);
-    free_matrix(filter, rows);
-
     return 0;
 }
